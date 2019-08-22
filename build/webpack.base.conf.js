@@ -1,45 +1,51 @@
-'use strict'
-const path = require('path')
-const utils = require('./utils')
-const config = require('../config')
-const vueLoaderConfig = require('./vue-loader.conf')
+'use strict';
+const utils = require('./utils');
+const config = require('../config');
+const vueLoaderConfig = require('./vue-loader.conf');
+const pages = require('./page-config');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-function resolve (dir) {
-  return path.join(__dirname, '..', dir)
-}
+const entry = {};
+const plugins = [];
 
-
+Object.keys(pages).forEach(k => {
+  const page = pages[k];
+  entry[k] = page.entry;
+  plugins.push(new HtmlWebpackPlugin({
+    template: page.template,
+    filename: k + '/index.html',
+    chunks: [k]
+  }));
+});
+plugins.push(new HtmlWebpackPlugin({
+  template: pages.home.template,
+  filename: 'index.html',
+  chunks: ['home']
+}));
 
 module.exports = {
-  context: path.resolve(__dirname, '../'),
-  entry: {
-    app: './src/main.js'
-  },
+  entry,
   output: {
-    path: config.build.assetsRoot,
-    filename: '[name].js',
-    publicPath: process.env.NODE_ENV === 'production'
-      ? config.build.assetsPublicPath
-      : config.dev.assetsPublicPath
+    path: utils.resolve('dist/pages'),
+    filename: '[name]/index[hash:6].js'
   },
   resolve: {
     extensions: ['.js', '.vue', '.json'],
     alias: {
       'vue$': 'vue/dist/vue.esm.js',
-      '@': resolve('src'),
+      '@': utils.resolve('src'),
     }
   },
   module: {
-    rules: [
-      {
-        test: /\.vue$/,
-        loader: 'vue-loader',
-        options: vueLoaderConfig
-      },
+    rules: [{
+      test: /\.vue$/,
+      loader: 'vue-loader',
+      options: vueLoaderConfig
+    },
       {
         test: /\.js$/,
         loader: 'babel-loader',
-        include: [resolve('src'), resolve('test'), resolve('node_modules/webpack-dev-server/client')]
+        include: [utils.resolve('src'), utils.resolve('test'), utils.resolve('node_modules/webpack-dev-server/client')]
       },
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
@@ -67,16 +73,7 @@ module.exports = {
       }
     ]
   },
-  node: {
-    // prevent webpack from injecting useless setImmediate polyfill because Vue
-    // source contains it (although only uses it if it's native).
-    setImmediate: false,
-    // prevent webpack from injecting mocks to Node native modules
-    // that does not make sense for the client
-    dgram: 'empty',
-    fs: 'empty',
-    net: 'empty',
-    tls: 'empty',
-    child_process: 'empty'
-  }
-}
+  plugins: [
+    ...plugins
+  ]
+};

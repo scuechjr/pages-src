@@ -98,4 +98,8 @@ exports.createNotifierCallback = () => {
       icon: path.join(__dirname, 'logo.png')
     })
   }
-}
+};
+
+exports.resolve = function(dir) {
+  return path.resolve(__dirname, '../', dir)
+};
